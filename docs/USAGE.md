@@ -1,4 +1,4 @@
-# Using i2v-tree
+# Using tree-library
 
 A practical guide: how to get data in, how to change it, and what to call afterwards so the tree
 notices. If you only read one section, read [Updating nodes](#updating-nodes) — it is where most
@@ -8,7 +8,7 @@ of the questions land.
 - [Getting started](#getting-started)
 - [Configuring the tree](#configuring-the-tree)
 - [Updating nodes](#updating-nodes)
-- [Structural edits with I2vTreeEditor](#structural-edits-with-i2vtreeeditor)
+- [Structural edits with TlTreeEditor](#structural-edits-with-tltreeeditor)
 - [Keeping state across a reload](#keeping-state-across-a-reload)
 - [Lazy loading](#lazy-loading)
 - [Searching and filtering](#searching-and-filtering)
@@ -29,8 +29,8 @@ question:
 ```mermaid
 flowchart LR
     D["<b>Your data</b><br/>plain arrays and objects<br/><i>you own this</i>"]
-    M["<b>I2vTree</b><br/>expanded set · filter · selection<br/>flattens data into <code>items[]</code>"]
-    C["<b>&lt;i2v-tree&gt;</b><br/>scroll window · DOM · events"]
+    M["<b>TlTree</b><br/>expanded set · filter · selection<br/>flattens data into <code>items[]</code>"]
+    C["<b>&lt;tl-tree&gt;</b><br/>scroll window · DOM · events"]
     D -->|childAccessor| M
     M -->|onDataInvalidated| C
     C -->|invalidateItem / load| M
@@ -53,30 +53,30 @@ That second step is the whole of [Updating nodes](#updating-nodes).
 ### Install and import
 
 ```bash
-npm i i2v-tree
+npm i tree-library
 ```
 
 The component is standalone:
 
 ```typescript
-import { I2vTreeComponent } from 'i2v-tree';
+import { TlTreeComponent } from 'tree-library';
 
 @Component({
     standalone: true,
-    imports: [I2vTreeComponent],
+    imports: [TlTreeComponent],
     // …
 })
 export class MyComponent {}
 ```
 
-On NgModules instead? `I2vTreeModule` exports the same component and works unchanged.
+On NgModules instead? `TlTreeModule` exports the same component and works unchanged.
 
-> **What the module covers.** `I2vTreeModule` exports `I2vTreeComponent` and `SetAttrsDirective` —
-> nothing else. `I2vTreeViewComponent` and the three row directives are standalone and imported
+> **What the module covers.** `TlTreeModule` exports `TlTreeComponent` and `SetAttrsDirective` —
+> nothing else. `TlTreeViewComponent` and the three row directives are standalone and imported
 > directly, which works from a standalone component's `imports` *and* from an NgModule's `imports`:
 >
 > ```typescript
-> @NgModule({ imports: [I2vTreeModule, I2vTreeRowDirective, I2vTreeRowSuffixDirective] })
+> @NgModule({ imports: [TlTreeModule, TlTreeRowDirective, TlTreeRowSuffixDirective] })
 > ```
 
 ### The simplest possible tree
@@ -84,10 +84,10 @@ On NgModules instead? `I2vTreeModule` exports the same component and works uncha
 ```typescript
 @Component({
     standalone: true,
-    imports: [I2vTreeComponent],
+    imports: [TlTreeComponent],
     template: `
         <div class="container">
-            <i2v-tree [data]="items" [(selection)]="selected"></i2v-tree>
+            <tl-tree [data]="items" [(selection)]="selected"></tl-tree>
         </div>`,
     styles: [`.container { height: 400px; }`]
 })
@@ -112,16 +112,16 @@ Two requirements the minimal form has:
 
 ### `[data]` or `[model]`?
 
-`[data]` is the shortcut — the component creates an `I2vTree` for you and calls `load()` on it.
+`[data]` is the shortcut — the component creates an `TlTree` for you and calls `load()` on it.
 You get no handle to it, so you cannot expand, filter or edit from code.
 
 For anything beyond display, own the model:
 
 ```typescript
-import { I2vTree, I2vTreeComponent } from 'i2v-tree';
+import { TlTree, TlTreeComponent } from 'tree-library';
 
 export class MyComponent {
-    public readonly model = new I2vTree<Item>({
+    public readonly model = new TlTree<Item>({
         childAccessor: item => item.children ?? undefined,
         canExpand: item => item.hasChildren
     });
@@ -133,7 +133,7 @@ export class MyComponent {
 ```
 
 ```html
-<i2v-tree [model]="model" [itemHeight]="28"></i2v-tree>
+<tl-tree [model]="model" [itemHeight]="28"></tl-tree>
 ```
 
 Now `model.expandAll()`, `model.setFilter(…)`, `model.invalidateItem(…)` are all yours. **Use
@@ -146,11 +146,11 @@ Now `model.expandAll()`, `model.setFilter(…)`, `model.invalidateItem(…)` are
 
 ## Configuring the tree
 
-Config goes to the `I2vTree` constructor (or `[config]` on the component). Every option is
+Config goes to the `TlTree` constructor (or `[config]` on the component). Every option is
 optional; these are the ones that matter most:
 
 ```typescript
-new I2vTree<Item>({
+new TlTree<Item>({
     // --- Shape of your data ---------------------------------------------------------
     childAccessor: item => item.children ?? undefined,  // may also return a Promise
     canExpand:     item => item.isFolder,               // authority on the expander
@@ -169,7 +169,7 @@ new I2vTree<Item>({
     expandMode:    'accordion',       // 'multi' (default) | 'accordion' — one branch at a time
     checkboxes:    true,
     isDisabled:    item => item.readonly,
-    highlightMatches: true,           // wrap filter matches in .i2v-match
+    highlightMatches: true,           // wrap filter matches in .tl-match
 
     // --- Drag and drop --------------------------------------------------------------
     canDrag: item => item.movable,
@@ -342,16 +342,16 @@ fetched is not there to find.
 
 ---
 
-## Structural edits with I2vTreeEditor
+## Structural edits with TlTreeEditor
 
-`I2vTreeEditor` does the array-splicing above for you, including the index correction that a
+`TlTreeEditor` does the array-splicing above for you, including the index correction that a
 same-parent move needs. It knows nothing about the component — it edits your arrays and reports
 which parents to invalidate.
 
 ```typescript
-import { I2vTreeEditor } from 'i2v-tree';
+import { TlTreeEditor } from 'tree-library';
 
-const editor = new I2vTreeEditor<Item>(
+const editor = new TlTreeEditor<Item>(
     {
         childAccessor: item => item.children ?? undefined,
         // Without this, inserting into a childless item is a no-op — the editor will not guess
@@ -397,7 +397,7 @@ you get new objects — so expanded state, selection and checks all evaporate.
 `keyOf` fixes this for check state:
 
 ```typescript
-new I2vTree<Item>({
+new TlTree<Item>({
     childAccessor: item => item.children ?? undefined,
     keyOf: item => item.id          // stable identity
 });
@@ -437,7 +437,7 @@ if (selected) {
 Return a `Promise` from `childAccessor` and the item opts into lazy loading:
 
 ```typescript
-new I2vTree<Item>({
+new TlTree<Item>({
     lazyLoad: true,
     canExpand: item => item.isParent,        // required — see below
     childAccessor: item => {
@@ -512,17 +512,17 @@ model.setFilter(undefined);          // clear
 `[filter]` and `[filterText]` compete — a wrapper that applies its own filter should use
 `[highlightTerm]` for the marking, not `[filterText]`, or the two schedule against each other.
 
-`I2vTreeSearch` is the matching helper, and it is deliberately string-in, data-out — nothing touches
+`TlTreeSearch` is the matching helper, and it is deliberately string-in, data-out — nothing touches
 your items:
 
 ```typescript
-import { I2vTreeSearch } from 'i2v-tree';
+import { TlTreeSearch } from 'tree-library';
 
-const predicate = I2vTreeSearch.buildPredicate<Item>(term, item => [item.name, item.ip, item.type]);
+const predicate = TlTreeSearch.buildPredicate<Item>(term, item => [item.name, item.ip, item.type]);
 model.setFilter(term ? predicate : undefined);
 
-I2vTreeSearch.getMatchRanges('camera-04', 'era');   // [[3, 6]]
-I2vTreeSearch.getSegments('camera-04', 'era');      // alternating { text, match } segments
+TlTreeSearch.getMatchRanges('camera-04', 'era');   // [[3, 6]]
+TlTreeSearch.getSegments('camera-04', 'era');      // alternating { text, match } segments
 ```
 
 `getSegments` always covers the whole string, so joining every `text` reproduces the input — which
@@ -544,7 +544,7 @@ These are two different things, deliberately:
 ### Selection
 
 ```typescript
-new I2vTree<Item>({ selectionMode: 'multiple' });   // 'none' | 'single' | 'multiple'
+new TlTree<Item>({ selectionMode: 'multiple' });   // 'none' | 'single' | 'multiple'
 ```
 
 ```typescript
@@ -599,7 +599,7 @@ roots-minus-exclusions form describes items that have never been fetched.
 Check options live on the tree config:
 
 ```typescript
-new I2vTree<Item>({
+new TlTree<Item>({
     keyOf: item => item.id,
     checkboxes: true,
     check: {
@@ -618,9 +618,9 @@ The check model can also be created *before* the tree and handed in — which is
 dropdown renders its chips while its panel has never been opened:
 
 ```typescript
-const checks = new I2vCheckModel<Item>({ keyOf: item => item.id });
+const checks = new TlCheckModel<Item>({ keyOf: item => item.id });
 // …later, when the panel opens:
-const model = new I2vTree<Item>(config, undefined, checks);
+const model = new TlTree<Item>(config, undefined, checks);
 ```
 
 ---
@@ -630,17 +630,17 @@ const model = new I2vTree<Item>(config, undefined, checks);
 Project an `<ng-template>` and the tree renders that instead of its built-in row:
 
 ```html
-<i2v-tree [model]="model" [itemHeight]="28">
-    <ng-template i2vTreeRow let-node let-state="state" let-index="absoluteIndex">
+<tl-tree [model]="model" [itemHeight]="28">
+    <ng-template tlTreeRow let-node let-state="state" let-index="absoluteIndex">
         <div class="row" [class.selected]="state.isSelected(node.item)">
             <span [style.paddingLeft.rem]="node.depth * 1.2">{{ node.item.name }}</span>
             @if (state.isLoading(node.item)) { <span class="spinner"></span> }
         </div>
     </ng-template>
-</i2v-tree>
+</tl-tree>
 ```
 
-Use the `i2vTreeRow` directive rather than a bare `<ng-template>`: under `strictTemplates` a bare
+Use the `tlTreeRow` directive rather than a bare `<ng-template>`: under `strictTemplates` a bare
 one types `node` as `any`, and the directive carries the context guard that types it properly. A
 bare template still works, for compatibility.
 
@@ -648,9 +648,9 @@ Import the directive alongside the component, or the attribute is silently inert
 built-in row instead:
 
 ```typescript
-import { I2vTreeComponent, I2vTreeRowDirective } from 'i2v-tree';
+import { TlTreeComponent, TlTreeRowDirective } from 'tree-library';
 
-@Component({ standalone: true, imports: [I2vTreeComponent, I2vTreeRowDirective], /* … */ })
+@Component({ standalone: true, imports: [TlTreeComponent, TlTreeRowDirective], /* … */ })
 ```
 
 The context you get:
@@ -669,12 +669,12 @@ that renders taller than it claims makes the whole viewport drift.
 To keep the built-in row and just add to it, use the slot directives instead:
 
 ```html
-<i2v-tree [model]="model">
-    <ng-template i2vTreeRowPrefix let-node><span class="badge">{{ node.item.count }}</span></ng-template>
-    <ng-template i2vTreeRowSuffix let-node>
+<tl-tree [model]="model">
+    <ng-template tlTreeRowPrefix let-node><span class="badge">{{ node.item.count }}</span></ng-template>
+    <ng-template tlTreeRowSuffix let-node>
         <button (click)="edit(node.item); $event.stopPropagation()">Edit</button>
     </ng-template>
-</i2v-tree>
+</tl-tree>
 ```
 
 Prefix renders before the expander, suffix after the label. Per-row actions belong in the suffix.
@@ -682,7 +682,7 @@ Prefix renders before the expander, suffix after the label. Per-row actions belo
 ### Events
 
 ```html
-<i2v-tree
+<tl-tree
     [model]="model"
     (selectionChange)="onSelect($event)"
     (rowClick)="onRowClick($event.event, $event.item)"
@@ -693,7 +693,7 @@ Prefix renders before the expander, suffix after the label. Per-row actions belo
     (checkChange)="onCheck($event.item, $event.checked)"
     (activeItemChange)="onKeyboardFocus($event)"
     (escape)="close()"
-></i2v-tree>
+></tl-tree>
 ```
 
 `iconClick` and `labelClick` fire for the built-in row's icon and label specifically.
@@ -705,7 +705,7 @@ Prefix renders before the expander, suffix after the label. Per-row actions belo
 Off by default. Three hooks turn it on:
 
 ```typescript
-new I2vTree<Item>({
+new TlTree<Item>({
     canDrag: item => !item.locked,
     canDrop: ({ item, parent, parentNode, index }) => parent?.isFolder ?? false,
     move: async ({ item, parent, index }) => {
@@ -720,19 +720,19 @@ the built-in one splices between the arrays reachable through `childAccessor` �
 nested data, wrong if your data lives in a store or on a server.
 
 Hovering over a collapsed node during a drag opens it after ~600ms. Drops between windows work
-through the `application/json.i2v-tree-item` dataTransfer key; supply `getDragData` to control the
+through the `application/json.tl-tree-item` dataTransfer key; supply `getDragData` to control the
 payload.
 
 A **custom row** must opt in, since the built-in row's drag wiring is not yours:
 
 ```html
-<i2v-tree #tree [model]="model">
-    <ng-template i2vTreeRow let-node>
+<tl-tree #tree [model]="model">
+    <ng-template tlTreeRow let-node>
         <div [draggable]="tree.canDrag(node.item)" (dragstart)="tree.handleDragstart($event, node)">
             {{ node.item.name }}
         </div>
     </ng-template>
-</i2v-tree>
+</tl-tree>
 ```
 
 ---
@@ -742,7 +742,7 @@ A **custom row** must opt in, since the built-in row's drag wiring is not yours:
 Grab the component with a template reference or `@ViewChild`:
 
 ```typescript
-@ViewChild(I2vTreeComponent) public tree!: I2vTreeComponent;
+@ViewChild(TlTreeComponent) public tree!: TlTreeComponent;
 ```
 
 ```typescript
@@ -770,11 +770,11 @@ tab that was hidden at init, a flex parent, a dialog that animates open.
 
 ## The batteries-included wrapper
 
-`<i2v-tree-view>` wraps the tree with a header, a search box, and empty / loading / no-result
+`<tl-tree-view>` wraps the tree with a header, a search box, and empty / loading / no-result
 states, for when you would otherwise build the same chrome again:
 
 ```html
-<i2v-tree-view
+<tl-tree-view
     [model]="model"
     title="Devices"
     [showSearch]="true"
@@ -792,9 +792,9 @@ states, for when you would otherwise build the same chrome again:
     (searchTextChange)="onSearch($event)"
     (itemContextMenu)="showMenu($event)"
 >
-    <ng-template i2vTreeRow let-node>…</ng-template>
-    <ng-template #i2vTreeEmpty>Nothing here yet. <a (click)="add()">Add one</a></ng-template>
-</i2v-tree-view>
+    <ng-template tlTreeRow let-node>…</ng-template>
+    <ng-template #tlTreeEmpty>Nothing here yet. <a (click)="add()">Add one</a></ng-template>
+</tl-tree-view>
 ```
 
 Two deliberate choices worth knowing: every user-visible string is an input with an English default
@@ -820,7 +820,7 @@ so you supply your own menu component.
 | `getCheckedItems()` misses checked nodes | It only enumerates loaded items | Use `checks.getSelection()` |
 | `scrollToItem` does nothing | Ancestors are collapsed, so the item is not a row | `tree.navigateToItem(item)` |
 | `ExpressionChangedAfterItHasBeenChecked` | `[(selection)]` emits during the parent's input pass | Split into `[selection]` + `(selectionChange)` |
-| Two trees fight over expand-all | Shared state in your own wrapper | `<i2v-tree-view>` holds it per instance |
+| Two trees fight over expand-all | Shared state in your own wrapper | `<tl-tree-view>` holds it per instance |
 | Drag does nothing on a custom row | The built-in drag wiring is not in your template | Wire `[draggable]` + `(dragstart)` to `tree.canDrag` / `tree.handleDragstart` |
 
 ---
@@ -828,7 +828,7 @@ so you supply your own menu component.
 ## See also
 
 - [README](../README.md) — what this is, the architecture, and the live demo
-- [projects/i2v-tree/readme.md](../projects/i2v-tree/readme.md) — the library readme and the
-  `of-tree` → `i2v-tree` migration table
+- [projects/tree-library/readme.md](../projects/tree-library/readme.md) — the library readme and the
+  `of-tree` → `tree-library` migration table
 - [projects/of-demo/](../projects/of-demo/) — a working app exercising lazy loading, both search
   strategies, custom rows and the tree builder

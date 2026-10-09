@@ -1,0 +1,111 @@
+@if (showHeader) {
+    <div class="tl-tv-header">
+        @if (title) {
+            <span class="tl-tv-title">{{ title }}</span>
+        }
+
+        <span class="tl-tv-spacer"></span>
+
+        @if (showCount) {
+            <span class="tl-tv-count" [attr.title]="getCountSummary()" aria-hidden="true">i</span>
+        }
+
+        @if (configNames.length) {
+            <button type="button" class="tl-tv-btn tl-tv-config" (click)="configMenu.emit({ event: $event })">
+                {{ selectedConfigName || 'Configuration' }}
+            </button>
+        }
+
+        @if (showExpandToggle) {
+            <button
+                type="button"
+                class="tl-tv-btn tl-tv-expand"
+                [class.tl-tv-expanded]="isExpanded"
+                [attr.title]="expandToggleLabel"
+                [attr.aria-label]="expandToggleLabel"
+                [attr.aria-pressed]="isExpanded"
+                (click)="toggleExpandAll()"
+            ></button>
+        }
+
+        @if (showRefresh) {
+            <button
+                type="button"
+                class="tl-tv-btn tl-tv-refresh"
+                title="Refresh"
+                aria-label="Refresh"
+                (click)="handleRefresh()"
+            ></button>
+        }
+    </div>
+}
+
+@if (showSearch) {
+    <div class="tl-tv-search">
+        <input
+            type="search"
+            class="tl-tv-search-input"
+            role="searchbox"
+            [attr.placeholder]="searchPlaceholder"
+            [attr.aria-label]="searchPlaceholder"
+            [value]="searchText"
+            (input)="handleSearchInput($any($event.target).value)"
+        />
+
+        @if (searchFields.length > 1) {
+            <button
+                type="button"
+                class="tl-tv-btn tl-tv-searchby"
+                title="Search by"
+                aria-label="Search by"
+                (click)="searchByMenu.emit({ event: $event })"
+            ></button>
+        }
+    </div>
+}
+
+<div class="tl-tv-body">
+    <!--
+        Hidden rather than removed: destroying the tree would throw away its scroll position and
+        expand state every time a search happened to match nothing.
+    -->
+    <!--
+        Always rendered and never display:none. A hidden element measures zero height, so the tree
+        would size its viewport to a single row and never recover once rows arrived. The state
+        messages simply sit over it, and they only ever show when the tree has nothing to draw.
+    -->
+    <tl-tree
+        [config]="config"
+        [data]="data"
+        [selection]="selection"
+        [ariaLabel]="ariaLabel"
+        [itemHeight]="itemHeight ?? 0"
+        (selectionChange)="selectionChange.emit($event)"
+        (itemContextMenu)="itemContextMenu.emit($event)"
+        (itemDblClick)="itemDblClick.emit($event)"
+        (rowClick)="rowClick.emit($event)"
+        (checkChange)="checkChange.emit($event)"
+        [rowTemplate]="rowTemplate?.template"
+        [rowPrefixTemplate]="rowPrefix?.template"
+        [rowSuffixTemplate]="rowSuffix?.template"
+    >
+    </tl-tree>
+
+    @if (loading) {
+        <div class="tl-tv-state tl-tv-loading" role="status">
+            <ng-container *ngTemplateOutlet="loadingTemplate ?? defaultLoading"></ng-container>
+        </div>
+    } @else if (isNoResult) {
+        <div class="tl-tv-state tl-tv-noresult" role="status">
+            <ng-container *ngTemplateOutlet="noResultTemplate ?? defaultNoResult"></ng-container>
+        </div>
+    } @else if (isEmpty) {
+        <div class="tl-tv-state tl-tv-empty" role="status">
+            <ng-container *ngTemplateOutlet="emptyTemplate ?? defaultEmpty"></ng-container>
+        </div>
+    }
+</div>
+
+<ng-template #defaultLoading>{{ loadingText }}</ng-template>
+<ng-template #defaultNoResult>{{ noResultText }}</ng-template>
+<ng-template #defaultEmpty>{{ emptyText }}</ng-template>

@@ -3,23 +3,23 @@
     "version": 1,
     "newProjectRoot": "projects",
     "projects": {
-        "i2v-tree": {
+        "tree-library": {
             "projectType": "library",
-            "root": "projects/i2v-tree",
-            "sourceRoot": "projects/i2v-tree/src",
-            "prefix": "i2v",
+            "root": "projects/tree-library",
+            "sourceRoot": "projects/tree-library/src",
+            "prefix": "tl",
             "architect": {
                 "build": {
                     "builder": "@angular-devkit/build-angular:ng-packagr",
                     "options": {
-                        "project": "projects/i2v-tree/ng-package.json"
+                        "project": "projects/tree-library/ng-package.json"
                     },
                     "configurations": {
                         "production": {
-                            "tsConfig": "projects/i2v-tree/tsconfig.lib.prod.json"
+                            "tsConfig": "projects/tree-library/tsconfig.lib.prod.json"
                         },
                         "development": {
-                            "tsConfig": "projects/i2v-tree/tsconfig.lib.json"
+                            "tsConfig": "projects/tree-library/tsconfig.lib.json"
                         }
                     },
                     "defaultConfiguration": "production"
@@ -27,15 +27,15 @@
                 "test": {
                     "builder": "@angular-devkit/build-angular:karma",
                     "options": {
-                        "tsConfig": "projects/i2v-tree/tsconfig.spec.json",
+                        "tsConfig": "projects/tree-library/tsconfig.spec.json",
                         "polyfills": ["zone.js", "zone.js/testing"],
-                        "karmaConfig": "projects/i2v-tree/karma.conf.js"
+                        "karmaConfig": "projects/tree-library/karma.conf.js"
                     }
                 },
                 "lint": {
                     "builder": "@angular-eslint/builder:lint",
                     "options": {
-                        "lintFilePatterns": ["projects/i2v-tree/**/*.ts", "projects/i2v-tree/**/*.html"]
+                        "lintFilePatterns": ["projects/tree-library/**/*.ts", "projects/tree-library/**/*.html"]
                     }
                 }
             }

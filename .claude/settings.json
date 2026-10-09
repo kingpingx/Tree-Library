@@ -18,7 +18,7 @@
       "Bash(git add *)",
       "Bash(git restore *)",
       "Bash(xargs -I{} echo \"✓ lint: {}/2 projects\")",
-      "Bash(timeout 300 npx ng test i2v-tree --watch=false)",
+      "Bash(timeout 300 npx ng test tree-library --watch=false)",
       "Bash(grep -n 'handleKeydown\\\\|$event.key\\\\|case '\\\\''' virtual-tree.component.ts)",
       "Bash(grep -E \"FAILED$|^Chrome.*\\(FAILED|SUCCESS\\) *$|TOTAL|Expected |op [0-9]+\")",
       "Bash(python3 -)",
